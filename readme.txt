@@ -19,3 +19,6 @@ go install google.golang.org/grpc
 https://github.com/13802880779/dcache.git
 
 git remote add origin git@github.com:13802880779/dcache.git
+git push -u origin master
+git add 'readme.txt'
+git commit -m 'add readme'
