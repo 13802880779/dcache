@@ -25,23 +25,39 @@ type CacheItem struct {
 	sync.RWMutex
 }
 
+/*
+	key
+	value
+	ttl
+	ttltype
+	fn
+*/
 func NewCacheItem(args ...interface{}) *CacheItem {
 	now := time.Now()
 	switch len(args) {
 	case 2:
 		return &CacheItem{Key: args[0], Value: args[1], TTL: 5 * time.Second, ttlType: 0, aboutToExpired: nil, CreatedAt: now, AccessAt: now, AccessCount: 0}
 	case 3:
-		tt := args[2].(time.Duration)
+		tt, ok := args[2].(time.Duration)
+		if !ok {
+			return nil
+		}
 		return &CacheItem{Key: args[0], Value: args[1], TTL: tt, ttlType: 0, aboutToExpired: nil, CreatedAt: now, AccessAt: now, AccessCount: 0}
 
 	case 4:
-		tt := args[2].(time.Duration)
-		ttype := args[3].(ttltype)
+		tt, ok1 := args[2].(time.Duration)
+		ttype, ok2 := args[3].(ttltype)
+		if !ok1 || !ok2 {
+			return nil
+		}
 		return &CacheItem{Key: args[0], Value: args[1], TTL: tt, ttlType: ttype, aboutToExpired: nil, CreatedAt: now, AccessAt: now, AccessCount: 0}
 	case 5:
-		tt := args[2].(time.Duration)
-		ttype := args[3].(ttltype)
-		fn := args[4].(func())
+		tt, ok1 := args[2].(time.Duration)
+		ttype, ok2 := args[3].(ttltype)
+		fn, ok3 := args[4].(func())
+		if !ok1 || !ok2 || !ok3 {
+			return nil
+		}
 		return &CacheItem{Key: args[0], Value: args[1], TTL: tt, ttlType: ttype, aboutToExpired: fn, CreatedAt: now, AccessAt: now, AccessCount: 0}
 	default:
 		return nil
@@ -49,12 +65,19 @@ func NewCacheItem(args ...interface{}) *CacheItem {
 }
 
 func (ci *CacheItem) SetAboutToExpiredCallback(fn func()) {
+	ci.Lock()
+	defer ci.Unlock()
 	ci.aboutToExpired = fn
+}
+func (ci *CacheItem) SetValue(val interface{}) {
+	ci.RWMutex.Lock()
+	defer ci.RWMutex.Unlock()
+	ci.Value = val
 }
 
 func (ci *CacheItem) IsItemExpired() bool {
-	//ci.RWMutex.Lock()
-	//defer ci.RWMutex.Unlock()
+	ci.Lock()
+	defer ci.Unlock()
 	now := time.Now()
 	switch ci.ttlType {
 	case DO_NOT_RESET_TTL_ON_ACCESS:
@@ -67,8 +90,8 @@ func (ci *CacheItem) IsItemExpired() bool {
 }
 
 func (ci *CacheItem) TimeToExpired() time.Duration {
-	//ci.RWMutex.Lock()
-	//defer ci.RWMutex.Unlock()
+	ci.Lock()
+	defer ci.Unlock()
 	now := time.Now()
 	switch ci.ttlType {
 	case DO_NOT_RESET_TTL_ON_ACCESS:
@@ -81,8 +104,8 @@ func (ci *CacheItem) TimeToExpired() time.Duration {
 }
 
 func (ci *CacheItem) KeepAlive() {
-	//ci.RWMutex.Lock()
-	//defer ci.RWMutex.Unlock()
+	ci.Lock()
+	defer ci.Unlock()
 	ci.AccessAt = time.Now()
 	ci.AccessCount++
 }

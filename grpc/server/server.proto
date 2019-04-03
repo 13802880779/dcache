@@ -1,0 +1,29 @@
+syntax="proto3";
+package server;
+
+message server{
+	string host=1;
+	string port=2;
+}
+
+message servers{
+	repeated server s=3;
+}
+message cacheitem{
+	string key=4;
+	string value=5;
+}
+message key{
+	string key=6;
+}
+message client{
+	string host=7;
+}
+
+service SService{
+	rpc GetServers(client) returns (servers){}
+	rpc Add(cacheitem) returns (cacheitem){}
+	rpc Get(key) returns (cacheitem){}
+	rpc Delete(key) returns (cacheitem){}
+	rpc Update(cacheitem) returns (cacheitem){}
+}
